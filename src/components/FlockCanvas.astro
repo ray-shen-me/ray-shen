@@ -1,0 +1,471 @@
+---
+// Flock canvas island — persistent boids murmuration
+---
+
+<canvas id="flock-canvas" aria-hidden="true"></canvas>
+
+<script>
+  // ─── Mutable config (updated by DevPanel via 'boids-param' events) ───────
+
+  const cfg = {
+    count:       180,
+    maxSpeed:    1.8,
+    sepRadius:   28,
+    nbrRadius:   80,
+    predRadius:  120,
+    // weights
+    wSep:  1.6,
+    wAli:  1.0,
+    wCoh:  0.9,
+    wWan:  0.3,
+    // force cap (not exposed in panel — keep tuned)
+    maxForce: 0.055,
+    // predator impulse strength — applied OUTSIDE the force clamp
+    predImpulse: 0.45,
+  };
+
+  // ─── Fixed visuals ────────────────────────────────────────────────────────
+
+  const FLAP_BASE_FREQ  = 1.3;   // Hz at full speed — lower = more natural glide feel
+  const FLAP_AMP        = 0.30;  // radians half-amplitude
+  const BANK_SMOOTH     = 0.08;  // lerp factor toward target bank per frame (lower = smoother)
+  const ROOST_Y_FRAC    = 0.92;
+  const ROOST_COUNT     = 22;
+  const DPR_CAP         = Math.min(window.devicePixelRatio, 2);
+  const INK_COLOR       = '#1B1A17';
+
+  // ─── Vec2 helpers ────────────────────────────────────────────────────────
+
+  function len(x: number, y: number) { return Math.sqrt(x * x + y * y); }
+  function norm(x: number, y: number): [number, number] {
+    const l = len(x, y);
+    return l > 0 ? [x / l, y / l] : [0, 0];
+  }
+  function clampMag(x: number, y: number, max: number): [number, number] {
+    const l = len(x, y);
+    if (l > max) { const s = max / l; return [x * s, y * s]; }
+    return [x, y];
+  }
+
+  // ─── Boid ────────────────────────────────────────────────────────────────
+
+  interface Boid {
+    x: number; y: number;
+    vx: number; vy: number;
+    ax: number; ay: number;
+    flapPhase: number; // accumulated phase (radians) — incremented by dt each frame
+    depth: number;
+    bank: number;      // smoothed roll angle for banking
+    roostTarget: number | null;
+    roosted: boolean;
+  }
+
+  function makeBoid(w: number, h: number): Boid {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = cfg.maxSpeed * (0.5 + Math.random() * 0.5);
+    return {
+      x: Math.random() * w, y: Math.random() * h,
+      vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+      ax: 0, ay: 0,
+      flapPhase: Math.random() * Math.PI * 2, // random start in cycle
+      depth: Math.random(),
+      bank: 0,
+      roostTarget: null, roosted: false,
+    };
+  }
+
+  // ─── Spatial grid ────────────────────────────────────────────────────────
+
+  const GRID_CELL = cfg.nbrRadius; // matches initial nbrRadius; close enough for typical values
+
+  function buildGrid(boids: Boid[], w: number, h: number) {
+    const cell = cfg.nbrRadius;
+    const cols = Math.ceil(w / cell) + 1;
+    const rows = Math.ceil(h / cell) + 1;
+    const cells = new Map<number, number[]>();
+    const key = (c: number, r: number) => r * cols + c;
+    for (let i = 0; i < boids.length; i++) {
+      const b = boids[i];
+      const c = Math.floor(b.x / cell);
+      const r = Math.floor(b.y / cell);
+      const k = key(c, r);
+      if (!cells.has(k)) cells.set(k, []);
+      cells.get(k)!.push(i);
+    }
+    return { cells, cols, rows, key, cell };
+  }
+
+  function getNeighbors(
+    grid: ReturnType<typeof buildGrid>,
+    boids: Boid[],
+    i: number,
+    radius: number
+  ): number[] {
+    const b = boids[i];
+    const cell = grid.cell;
+    const cMin = Math.floor((b.x - radius) / cell);
+    const cMax = Math.floor((b.x + radius) / cell);
+    const rMin = Math.floor((b.y - radius) / cell);
+    const rMax = Math.floor((b.y + radius) / cell);
+    const out: number[] = [];
+    const r2 = radius * radius;
+    for (let r = rMin; r <= rMax; r++) {
+      for (let c = cMin; c <= cMax; c++) {
+        const k = grid.key(
+          Math.max(0, Math.min(c, grid.cols - 1)),
+          Math.max(0, Math.min(r, grid.rows - 1))
+        );
+        const bucket = grid.cells.get(k);
+        if (!bucket) continue;
+        for (const j of bucket) {
+          if (j === i) continue;
+          const dx = boids[j].x - b.x;
+          const dy = boids[j].y - b.y;
+          if (dx * dx + dy * dy < r2) out.push(j);
+        }
+      }
+    }
+    return out;
+  }
+
+  // ─── Boids step ──────────────────────────────────────────────────────────
+
+  function step(
+    boids: Boid[],
+    dt: number,
+    w: number,
+    h: number,
+    px: number,   // predator X, -1 = none
+    py: number,
+    temperature: number
+  ) {
+    const grid  = buildGrid(boids, w, h);
+    const speed = cfg.maxSpeed * (0.4 + temperature * 0.6);
+    const force = cfg.maxForce * (0.4 + temperature * 0.6);
+
+    for (let i = 0; i < boids.length; i++) {
+      const b = boids[i];
+      if (b.roosted) continue;
+
+      const neighbors = getNeighbors(grid, boids, i, cfg.nbrRadius);
+      const sepNbrs   = getNeighbors(grid, boids, i, cfg.sepRadius);
+
+      // ── Separation
+      let sx = 0, sy = 0;
+      for (const j of sepNbrs) {
+        const dx = b.x - boids[j].x;
+        const dy = b.y - boids[j].y;
+        const d = len(dx, dy);
+        if (d > 0) { sx += dx / d; sy += dy / d; }
+      }
+
+      // ── Alignment
+      let ax = 0, ay = 0;
+      if (neighbors.length > 0) {
+        for (const j of neighbors) { ax += boids[j].vx; ay += boids[j].vy; }
+        ax /= neighbors.length; ay /= neighbors.length;
+        const [nx, ny] = norm(ax, ay);
+        ax = nx * speed - b.vx;
+        ay = ny * speed - b.vy;
+      }
+
+      // ── Cohesion
+      let cx = 0, cy = 0;
+      if (neighbors.length > 0) {
+        for (const j of neighbors) { cx += boids[j].x; cy += boids[j].y; }
+        cx = cx / neighbors.length - b.x;
+        cy = cy / neighbors.length - b.y;
+        const [nx, ny] = norm(cx, cy);
+        cx = nx * speed - b.vx;
+        cy = ny * speed - b.vy;
+      }
+
+      // ── Wander
+      const wAngle  = (Math.random() - 0.5) * 0.4;
+      const heading = Math.atan2(b.vy, b.vx) + wAngle;
+      const wx = Math.cos(heading) * speed - b.vx;
+      const wy = Math.sin(heading) * speed - b.vy;
+
+      // ── Combined flocking force (clamped) ─────────────────────────────────
+      const rawAx = cfg.wSep * sx + cfg.wAli * ax + cfg.wCoh * cx + cfg.wWan * wx;
+      const rawAy = cfg.wSep * sy + cfg.wAli * ay + cfg.wCoh * cy + cfg.wWan * wy;
+      const [fax, fay] = clampMag(rawAx, rawAy, force);
+
+      b.vx += fax;
+      b.vy += fay;
+
+      // ── Predator — applied as a direct velocity impulse AFTER the force
+      //    clamp so it's never neutralised by flocking forces.
+      if (px >= 0) {
+        const dx = b.x - px;
+        const dy = b.y - py;
+        const d  = len(dx, dy);
+        if (d > 0 && d < cfg.predRadius) {
+          // Stronger when closer; falls off linearly to zero at predRadius
+          const strength = cfg.predImpulse * (1 - d / cfg.predRadius);
+          b.vx += (dx / d) * strength;
+          b.vy += (dy / d) * strength;
+        }
+      }
+
+      // Store acceleration direction for banking
+      b.ax = fax; b.ay = fay;
+
+      // ── Smooth bank — lerp toward target turn rate rather than snapping
+      const velDir     = Math.atan2(b.vy, b.vx);
+      const accDir     = Math.atan2(fay, fax);
+      // Signed angle diff in (-π, π)
+      let angleDiff = accDir - velDir;
+      while (angleDiff >  Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      const targetBank = Math.sin(angleDiff) * 0.45;
+      b.bank += (targetBank - b.bank) * BANK_SMOOTH;
+
+      // ── Accumulate flap phase — smooth because it only ever increases
+      const spd      = len(b.vx, b.vy);
+      const flapFreq = FLAP_BASE_FREQ * (0.3 + (spd / cfg.maxSpeed) * 0.7);
+      b.flapPhase   += flapFreq * dt * Math.PI * 2;
+
+      // Speed cap (may be raised above maxSpeed by predator — intentional)
+      const [nvx, nvy] = clampMag(b.vx, b.vy, cfg.maxSpeed * 1.8);
+      b.vx = nvx; b.vy = nvy;
+
+      // Roost pull
+      if (b.roostTarget !== null) {
+        const wireY = h * ROOST_Y_FRAC;
+        const dx = b.roostTarget - b.x;
+        const dy = wireY - b.y;
+        const d  = len(dx, dy);
+        if (d < 4) {
+          b.roosted = true;
+          b.x = b.roostTarget; b.y = wireY;
+          b.vx = 0; b.vy = 0;
+        } else {
+          const pull = Math.min(0.2, d * 0.05);
+          b.vx += (dx / d) * pull;
+          b.vy += (dy / d) * pull;
+        }
+      }
+
+      b.x += b.vx * dt * 60;
+      b.y += b.vy * dt * 60;
+
+      // Edge: soft wrap
+      if (b.x < -20) b.x = w + 20;
+      if (b.x > w + 20) b.x = -20;
+      if (b.y < -20) b.y = h + 20;
+      if (b.y > h + 20) b.y = -20;
+    }
+  }
+
+  // ─── Rendering ───────────────────────────────────────────────────────────
+  // No shadowBlur — it causes a full offscreen compositing pass per stroke
+  // (10k+/s at 180 boids × 60fps). Ink quality comes from lineWidth + lineCap.
+  // Use setTransform instead of save/translate/rotate/restore — avoids
+  // pushing/popping the context stack per boid.
+
+  function drawFlock(
+    ctx: CanvasRenderingContext2D,
+    boids: Boid[],
+    opacity: number
+  ) {
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = INK_COLOR;
+
+    for (const b of boids) {
+      const heading = Math.atan2(b.vy, b.vx);
+
+      // flapPhase is accumulated in step() — always smooth, never jumps
+      const flapAngle = b.roosted ? 0 : FLAP_AMP * Math.sin(b.flapPhase);
+      // bank is smoothed in step() — lerped toward turn rate, never snaps
+      const bank      = b.roosted ? 0 : b.bank;
+
+      const size  = 5 + b.depth * 6;
+      const alpha = opacity * (0.35 + b.depth * 0.65);
+      const angle = heading + bank;
+
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+
+      // Wing endpoints in local space, then transform inline
+      const lwx = -size;
+      const lwy =  size * 0.4 + flapAngle * size * 0.8;
+      const rwx = -size;
+      const rwy = -(size * 0.4 + flapAngle * size * 0.8);
+
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth   = 1.2 + b.depth * 0.6;
+
+      // Combined scale(DPR) × translate(b.x, b.y) × rotate(angle) in one call.
+      // Must include DPR_CAP — setTransform replaces the entire matrix, so
+      // the scale applied in resize() doesn't carry through.
+      ctx.setTransform(DPR_CAP * cosA, DPR_CAP * sinA, -DPR_CAP * sinA, DPR_CAP * cosA, b.x * DPR_CAP, b.y * DPR_CAP);
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(lwx, lwy);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(rwx, rwy);
+      ctx.stroke();
+    }
+
+    // Reset transform
+    ctx.setTransform(DPR_CAP, 0, 0, DPR_CAP, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+
+  // ─── Main entry ──────────────────────────────────────────────────────────
+
+  function init() {
+    const canvas = document.getElementById('flock-canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Low-cost WebGL check — if context is unavailable, hide canvas and bail
+    const testGL = document.createElement('canvas').getContext('webgl');
+    if (!testGL) { canvas.style.display = 'none'; return; }
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let W = 0, H = 0;
+    let boids: Boid[] = [];
+    let roostAssigned = false;
+
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      // Setting .width/.height resets context state — re-apply scale after
+      canvas!.width  = Math.round(W * DPR_CAP);
+      canvas!.height = Math.round(H * DPR_CAP);
+      canvas!.style.width  = W + 'px';
+      canvas!.style.height = H + 'px';
+      ctx!.setTransform(DPR_CAP, 0, 0, DPR_CAP, 0, 0);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    boids = Array.from({ length: cfg.count }, () => makeBoid(W, H));
+
+    // ── Predator (cursor / touch)
+    let predX = -1, predY = -1;
+    window.addEventListener('mousemove', (e) => { predX = e.clientX; predY = e.clientY; });
+    window.addEventListener('mouseleave', () => { predX = -1; predY = -1; });
+    window.addEventListener('touchmove', (e) => {
+      predX = e.touches[0].clientX;
+      predY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchend', () => { predX = -1; predY = -1; });
+
+    // ── Scroll
+    let scrollT = 0;
+    function updateScroll() {
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      scrollT = docH > 0 ? window.scrollY / docH : 0;
+    }
+    updateScroll();
+    window.addEventListener('scroll', updateScroll, { passive: true });
+
+    // ── DevPanel param events ─────────────────────────────────────────────
+    window.addEventListener('boids-param', (e: Event) => {
+      const { key, value } = (e as CustomEvent<{ key: string; value: number }>).detail;
+      switch (key) {
+        case 'dp-count':
+          cfg.count = Math.round(value);
+          // Respawn with new count — keep existing boids, add/remove to match
+          while (boids.length < cfg.count) boids.push(makeBoid(W, H));
+          if (boids.length > cfg.count) boids.splice(cfg.count);
+          break;
+        case 'dp-speed':    cfg.maxSpeed   = value; break;
+        case 'dp-sep-r':    cfg.sepRadius  = value; break;
+        case 'dp-nbr-r':    cfg.nbrRadius  = value; break;
+        case 'dp-pred-r':   cfg.predRadius = value; break;
+        case 'dp-temp':
+          // Override temperature from panel (overrides scroll during dev)
+          devTempOverride = value;
+          break;
+      }
+    });
+
+    let devTempOverride = -1; // -1 = use scroll-driven temperature
+
+    // ── RAF loop
+    let lastTime = 0;
+    let paused   = false;
+
+    document.addEventListener('visibilitychange', () => {
+      paused = document.hidden;
+      if (!paused) requestAnimationFrame(loop);
+    });
+
+    const io = new IntersectionObserver((entries) => {
+      const visible = entries[0].isIntersecting;
+      if (visible && paused && !document.hidden) { paused = false; requestAnimationFrame(loop); }
+      else if (!visible) { paused = true; }
+    });
+    io.observe(canvas);
+
+    function loop(ts: number) {
+      if (paused) return;
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+
+      // scrollT≈0.25 = top of experience · ≈0.50 = top of projects
+      // Fade and calm both complete by ~scrollT=0.38 (mid-experience).
+      const temperature   = devTempOverride >= 0
+        ? devTempOverride
+        : Math.max(0, 1 - scrollT * 4.0);   // calm: 0→0 at scrollT=0.25
+      const canvasOpacity = Math.max(0.05, 1 - scrollT * 2.8); // fade: 1→0.05 at scrollT=0.34
+
+      // Roost on scroll to footer
+      if (scrollT > 0.82 && !roostAssigned) {
+        roostAssigned = true;
+        const spacing = W / (ROOST_COUNT + 1);
+        const sorted  = [...boids].sort((a, b) => b.depth - a.depth);
+        sorted.slice(0, ROOST_COUNT).forEach((b, idx) => {
+          b.roostTarget = spacing * (idx + 1) + (Math.random() - 0.5) * spacing * 0.4;
+        });
+      }
+
+      // Un-roost on scroll back up
+      if (scrollT < 0.75 && roostAssigned) {
+        roostAssigned = false;
+        for (const b of boids) {
+          b.roostTarget = null;
+          b.roosted     = false;
+          if (b.vx === 0 && b.vy === 0) {
+            const a = Math.random() * Math.PI * 2;
+            b.vx = Math.cos(a) * cfg.maxSpeed;
+            b.vy = Math.sin(a) * cfg.maxSpeed;
+          }
+        }
+      }
+
+      if (!prefersReduced) {
+        step(boids, dt, W, H, predX, predY, temperature);
+      }
+
+      ctx!.clearRect(0, 0, W, H);
+      drawFlock(ctx!, boids, canvasOpacity);
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  init();
+</script>
+
+<style>
+  #flock-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+</style>

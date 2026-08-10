@@ -1,0 +1,64 @@
+---
+// Dev-only boids parameter panel — hidden in production builds.
+// Rendered only when import.meta.env.DEV is true.
+if (!import.meta.env.DEV) return;
+---
+
+<div id="dev-panel">
+  <details open>
+    <summary>Boids params</summary>
+    <label>Count <input type="range" id="dp-count" min="20" max="400" value="180" /><span id="dp-count-v">180</span></label>
+    <label>Speed <input type="range" id="dp-speed" min="1" max="40" value="18" /><span id="dp-speed-v">1.8</span></label>
+    <label>Sep R <input type="range" id="dp-sep-r" min="5" max="80" value="28" /><span id="dp-sep-r-v">28</span></label>
+    <label>Nbr R <input type="range" id="dp-nbr-r" min="20" max="200" value="80" /><span id="dp-nbr-r-v">80</span></label>
+    <label>Pred R <input type="range" id="dp-pred-r" min="40" max="300" value="120" /><span id="dp-pred-r-v">120</span></label>
+    <label>Temp <input type="range" id="dp-temp" min="0" max="10" value="10" /><span id="dp-temp-v">1.0</span></label>
+  </details>
+</div>
+
+<script>
+  const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+  function wire(id: string, div: number, event: string) {
+    const el = $(id);
+    const vEl = document.getElementById(id + '-v')!;
+    el.addEventListener('input', () => {
+      vEl.textContent = (parseFloat(el.value) / div).toFixed(1);
+      window.dispatchEvent(new CustomEvent('boids-param', {
+        detail: { key: id, value: parseFloat(el.value) / div }
+      }));
+    });
+  }
+  wire('dp-count', 1, 'input');
+  wire('dp-speed', 10, 'input');
+  wire('dp-sep-r', 1, 'input');
+  wire('dp-nbr-r', 1, 'input');
+  wire('dp-pred-r', 1, 'input');
+  wire('dp-temp', 10, 'input');
+</script>
+
+<style>
+  #dev-panel {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 10000;
+    background: rgba(27, 26, 23, 0.9);
+    color: #F4F0E6;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 0.75rem;
+    border-radius: 4px;
+    min-width: 200px;
+    backdrop-filter: blur(4px);
+  }
+  summary { cursor: pointer; margin-bottom: 0.5rem; }
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+  }
+  input[type="range"] { flex: 1; }
+  span { width: 2.5rem; text-align: right; }
+</style>

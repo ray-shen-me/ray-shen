@@ -1,0 +1,583 @@
+---
+import Base from '../layouts/Base.astro';
+import FlockCanvas from '../components/FlockCanvas.astro';
+import DevPanel from '../components/DevPanel.astro';
+
+const experience = [
+  {
+    org: 'Hudl',
+    location: 'Lincoln, NE',
+    role: 'Software Engineering Intern',
+    dates: 'May 2026 – Present',
+    bullets: [
+      'Contributed to shipping Hudl\'s real-time messaging platform to 7M+ directors, coaches, athletes, and parents.',
+      'Delivered 30+ features across system architecture and messaging in a single production launch cycle.',
+      'Developed production features using Stream.io, React, SCSS, TypeScript, and GraphQL.',
+    ],
+    tags: ['React', 'TypeScript', 'GraphQL', 'SCSS', 'Stream.io'],
+  },
+  {
+    org: 'Northeastern SGA',
+    location: 'Boston, MA',
+    role: 'Software Engineer',
+    dates: 'Sep 2025 – Dec 2025',
+    bullets: [
+      'Migrated the SGA website from Squarespace to React, reaching 38,000+ students and faculty.',
+      'Designed a custom PostgreSQL database to store page configurations and content.',
+      'Built customizable React Puck drag-and-drop components connected to a Node.js backend.',
+    ],
+    tags: ['React', 'PostgreSQL', 'Node.js', 'Puck'],
+  },
+  {
+    org: 'Eduruna',
+    location: 'Woodbridge, VA',
+    role: 'Software Development Fellow',
+    dates: 'Jun 2024 – Aug 2024',
+    bullets: [
+      'Led a team of 7 fellows to build and enhance a local nonprofit\'s web presence.',
+      'Managed project timelines and client communications; 100% of deliverables completed on schedule.',
+      'Contributed to front-end design and development, increasing online engagement by 400%.',
+    ],
+    tags: ['HTML', 'CSS', 'JavaScript'],
+  },
+];
+
+const projects = [
+  {
+    name: 'Plant',
+    award: 'NUACM Hackathon — Education Track Winner',
+    description:
+      'AI-powered course planner with personalized recommendations and PDF transcript parsing. Architected a Python pipeline to scrape and manage 87,000+ university courses in Firestore. Built drag-and-drop scheduling with difficulty-balancing algorithms.',
+    tags: ['Next.js', 'TypeScript', 'Firebase', 'Python'],
+    github: 'https://github.com/rayyshen',
+    live: null,
+  },
+  {
+    name: 'EcoJustice',
+    award: 'Hack the Nest — Grand Prize Winner',
+    description:
+      'Interactive analytics map visualizing EPA, CDC, and Census data. Mapped Social Vulnerability Index scores against industrial sites to identify environmental disparities by county. Automated data-driven advocacy letters for contacting local representatives.',
+    tags: ['Next.js', 'Google Maps API', 'TypeScript'],
+    github: 'https://github.com/rayyshen',
+    live: null,
+  },
+  {
+    name: 'NU SGA Site',
+    award: null,
+    description:
+      'Full migration of Northeastern SGA\'s website from Squarespace to a custom React application. Serves 38,000+ students and faculty with a configurable drag-and-drop CMS backed by PostgreSQL.',
+    tags: ['React', 'PostgreSQL', 'Node.js'],
+    github: 'https://github.com/rayyshen',
+    live: null,
+  },
+  {
+    name: 'Prometheus',
+    award: null,
+    description:
+      'Pro bono web tool for a nonprofit supporting survivors of domestic violence. Built a service-matching questionnaire deployed to 250+ survivors, with accessibility and survivor-conscious design at the forefront.',
+    tags: ['React', 'TypeScript', 'Vercel'],
+    github: 'https://github.com/rayyshen',
+    live: null,
+  },
+];
+---
+
+<Base>
+  <FlockCanvas />
+  <DevPanel />
+
+  <main>
+    <!-- ── Hero ──────────────────────────────────────────────── -->
+    <section id="hero" aria-label="Introduction">
+      <div class="container hero-inner">
+        <div class="hero-text">
+          <h1 class="hero-name">Ray Shen</h1>
+          <p class="hero-tagline">
+            I'm a full-stack engineer.<br />I build products end to end.
+          </p>
+        </div>
+        <nav class="hero-nav" aria-label="Page sections">
+          <ol>
+            <li><a href="#experience"><span class="mono">01</span> Experience</a></li>
+            <li><a href="#projects"><span class="mono">02</span> Projects</a></li>
+            <li><a href="#about"><span class="mono">03</span> About</a></li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+
+    <!-- ── Experience ─────────────────────────────────────────── -->
+    <section id="experience" aria-labelledby="experience-heading">
+      <div class="container">
+        <span class="section-index" aria-hidden="true">01</span>
+        <h2 id="experience-heading" class="section-heading">Experience</h2>
+        <ol class="experience-list" role="list">
+          {experience.map((job) => (
+            <li class="experience-item reveal">
+              <div class="experience-header">
+                <div class="experience-meta">
+                  <span class="experience-org">{job.org}</span>
+                  <span class="experience-location mono">{job.location}</span>
+                </div>
+                <div class="experience-role-dates">
+                  <span class="experience-role">{job.role}</span>
+                  <span class="experience-dates mono">{job.dates}</span>
+                </div>
+              </div>
+              <ul class="experience-bullets" role="list">
+                {job.bullets.map((b) => (
+                  <li>{b}</li>
+                ))}
+              </ul>
+              <div class="tag-list" role="list" aria-label="Technologies">
+                {job.tags.map((t) => (
+                  <span class="tag mono" role="listitem">{t}</span>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <!-- ── Projects ───────────────────────────────────────────── -->
+    <section id="projects" aria-labelledby="projects-heading">
+      <div class="container">
+        <span class="section-index" aria-hidden="true">02</span>
+        <h2 id="projects-heading" class="section-heading">Projects</h2>
+        <ol class="project-list" role="list">
+          {projects.map((p) => (
+            <li class="project-item reveal">
+              <div class="project-header">
+                <h3 class="project-name">{p.name}</h3>
+                {p.award && (
+                  <span class="project-award mono">{p.award}</span>
+                )}
+              </div>
+              <p class="project-description">{p.description}</p>
+              <div class="project-footer">
+                <div class="tag-list" role="list" aria-label="Technologies">
+                  {p.tags.map((t) => (
+                    <span class="tag mono" role="listitem">{t}</span>
+                  ))}
+                </div>
+                <div class="project-links">
+                  {p.github && (
+                    <a
+                      href={p.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${p.name} GitHub repository`}
+                    >
+                      GitHub ↗
+                    </a>
+                  )}
+                  {p.live && (
+                    <a
+                      href={p.live}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${p.name} live site`}
+                    >
+                      Live ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <!-- ── About ──────────────────────────────────────────────── -->
+    <section id="about" aria-labelledby="about-heading">
+      <div class="container">
+        <span class="section-index" aria-hidden="true">03</span>
+        <h2 id="about-heading" class="section-heading">About</h2>
+        <p class="about-bio reveal">
+          I'm a full-stack engineer studying CS and math at Northeastern,
+          currently interning at Hudl. I build products end to end — the work I
+          care most about has been civic, education, and nonprofit tools that
+          people actually use. Off the clock, I'm usually backpacking, running,
+          or snowboarding.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── Contact / Roost ────────────────────────────────────────── -->
+  <footer id="contact" aria-label="Contact">
+    <div class="container">
+      <div class="wire-container" aria-hidden="true">
+        <!-- Birds roost here (injected by canvas island) -->
+        <div id="roost-wire" role="presentation"></div>
+      </div>
+      <nav class="contact-links" aria-label="Contact links">
+        <a href="mailto:shen.ra@northeastern.edu">shen.ra@northeastern.edu</a>
+        <a
+          href="https://github.com/rayyshen"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub profile"
+        >GitHub</a>
+        <a
+          href="https://linkedin.com/in/shen-ray"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="LinkedIn profile"
+        >LinkedIn</a>
+      </nav>
+      <p class="copyright mono">
+        &copy; {new Date().getFullYear()} Ray Shen
+      </p>
+    </div>
+  </footer>
+</Base>
+
+<style>
+  /* ── Canvas root ─────────────────────────────────────────────── */
+
+  #flock-canvas-root {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── Main content stack ──────────────────────────────────────── */
+
+  main {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Hero ────────────────────────────────────────────────────── */
+
+  #hero {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    padding-block: var(--space-16);
+  }
+
+  .hero-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .hero-name {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: clamp(var(--text-3xl), 9vw, var(--text-4xl));
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .hero-tagline {
+    font-family: var(--font-body);
+    font-size: clamp(var(--text-base), 2.5vw, var(--text-lg));
+    color: var(--color-ink-muted);
+    line-height: var(--leading-loose);
+    margin-top: var(--space-2);
+  }
+
+  .hero-nav ol {
+    list-style: none;
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .hero-nav a {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-ink-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .hero-nav a:hover {
+    color: var(--color-ink);
+  }
+
+  .hero-nav .mono {
+    color: var(--color-ink-faint);
+  }
+
+  /* ── Sections shared ─────────────────────────────────────────── */
+
+  section {
+    padding-block: var(--space-16);
+  }
+
+  .section-heading {
+    font-size: var(--text-xl);
+    font-weight: 300;
+    margin-bottom: var(--space-8);
+    color: var(--color-ink);
+  }
+
+  /* ── Experience ──────────────────────────────────────────────── */
+
+  .experience-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .experience-item {
+    border-top: 1px solid var(--color-ink-faint);
+    padding-top: var(--space-4);
+  }
+
+  .experience-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+  }
+
+  .experience-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .experience-org {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-lg);
+  }
+
+  .experience-location {
+    color: var(--color-ink-faint);
+    font-size: var(--text-xs);
+  }
+
+  .experience-role-dates {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .experience-role {
+    font-size: var(--text-base);
+    color: var(--color-ink-muted);
+  }
+
+  .experience-dates {
+    font-size: var(--text-xs);
+    color: var(--color-ink-faint);
+  }
+
+  .experience-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+  }
+
+  .experience-bullets li {
+    font-size: var(--text-base);
+    color: var(--color-ink-muted);
+    padding-left: var(--space-3);
+    position: relative;
+  }
+
+  .experience-bullets li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--color-ink-faint);
+  }
+
+  /* ── Projects ────────────────────────────────────────────────── */
+
+  .project-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .project-item {
+    border-top: 1px solid var(--color-ink-faint);
+    padding-top: var(--space-4);
+  }
+
+  .project-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+  }
+
+  .project-name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .project-award {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    letter-spacing: 0.04em;
+  }
+
+  .project-description {
+    color: var(--color-ink-muted);
+    font-size: var(--text-base);
+    margin-bottom: var(--space-3);
+    line-height: var(--leading-body);
+  }
+
+  .project-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .project-links {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .project-links a {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  /* ── Tags ────────────────────────────────────────────────────── */
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .tag {
+    font-size: var(--text-xs);
+    color: var(--color-ink-faint);
+    border: 1px solid currentColor;
+    padding: 0.15em 0.5em;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── About ───────────────────────────────────────────────────── */
+
+  .about-bio {
+    font-size: clamp(var(--text-base), 2vw, var(--text-lg));
+    line-height: var(--leading-loose);
+    color: var(--color-ink-muted);
+    max-width: 38rem;
+  }
+
+  /* ── Contact / Roost ─────────────────────────────────────────── */
+
+  footer {
+    position: relative;
+    z-index: 1;
+    padding-block: var(--space-12);
+  }
+
+  .wire-container {
+    margin-bottom: var(--space-6);
+    position: relative;
+    height: 2rem; /* space for roosting birds */
+  }
+
+  #roost-wire {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--color-ink-faint);
+  }
+
+  .contact-links {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: var(--space-4);
+  }
+
+  .contact-links a {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-ink-muted);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .contact-links a:hover {
+    color: var(--color-accent);
+  }
+
+  .copyright {
+    font-size: var(--text-xs);
+    color: var(--color-ink-faint);
+  }
+
+  /* ── Responsive ──────────────────────────────────────────────── */
+
+  @media (max-width: 600px) {
+    .experience-meta,
+    .experience-role-dates {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .project-footer {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .hero-nav ol {
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .contact-links {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-2);
+    }
+  }
+</style>
+
+<script>
+  // Scroll reveal — IntersectionObserver
+  // Respects prefers-reduced-motion (class .reveal is instant when motion is reduced)
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!prefersReduced) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+  }
+</script>
