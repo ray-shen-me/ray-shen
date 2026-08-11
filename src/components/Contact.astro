@@ -1,0 +1,84 @@
+---
+import { contact } from '../data/site';
+---
+
+<footer id="contact" aria-label="Contact">
+  <div class="container">
+    <div class="wire-container" aria-hidden="true">
+      <div id="roost-wire" role="presentation"></div>
+    </div>
+    <nav class="contact-links" aria-label="Contact links">
+      <a href={`mailto:${contact.email}`}>{contact.email}</a>
+      <a
+        href={contact.github}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub profile"
+      >GitHub</a>
+      <a
+        href={contact.linkedin}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="LinkedIn profile"
+      >LinkedIn</a>
+    </nav>
+    <p class="copyright mono">
+      &copy; {new Date().getFullYear()} Ray Shen
+    </p>
+  </div>
+</footer>
+
+<style>
+  footer {
+    position: relative;
+    z-index: 1;
+    padding-block: var(--space-12);
+  }
+
+  .wire-container {
+    margin-bottom: var(--space-6);
+    position: relative;
+    height: 2rem;
+  }
+
+  #roost-wire {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--color-ink-faint);
+  }
+
+  .contact-links {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: var(--space-4);
+  }
+
+  .contact-links a {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-ink-muted);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .contact-links a:hover {
+    color: var(--color-accent);
+  }
+
+  .copyright {
+    font-size: var(--text-xs);
+    color: var(--color-ink-faint);
+  }
+
+  @media (max-width: 600px) {
+    .contact-links {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-2);
+    }
+  }
+</style>

@@ -1,0 +1,124 @@
+---
+import { experience } from '../../data/experience';
+---
+
+<section id="experience" aria-labelledby="experience-heading">
+  <div class="container">
+    <span class="section-index" aria-hidden="true">01</span>
+    <h2 id="experience-heading" class="section-heading">Experience</h2>
+    <ol class="experience-list" role="list">
+      {experience.map((job) => (
+        <li class="experience-item reveal">
+          <div class="experience-header">
+            <div class="experience-meta">
+              <span class="experience-org">{job.org}</span>
+              <span class="experience-location mono">{job.location}</span>
+            </div>
+            <div class="experience-role-dates">
+              <span class="experience-role">{job.role}</span>
+              <span class="experience-dates mono">{job.dates}</span>
+            </div>
+          </div>
+          <ul class="experience-bullets" role="list">
+            {job.bullets.map((b) => (
+              <li>{b}</li>
+            ))}
+          </ul>
+          <div class="tag-list" role="list" aria-label="Technologies">
+            {job.tags.map((t) => (
+              <span class="tag mono" role="listitem">{t}</span>
+            ))}
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .experience-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .experience-item {
+    border-top: 1px solid var(--color-ink-faint);
+    padding-top: var(--space-4);
+  }
+
+  .experience-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+  }
+
+  .experience-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .experience-org {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-lg);
+  }
+
+  .experience-location {
+    color: var(--color-ink-faint);
+    font-size: var(--text-xs);
+  }
+
+  .experience-role-dates {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .experience-role {
+    font-size: var(--text-base);
+    color: var(--color-ink-muted);
+  }
+
+  .experience-dates {
+    font-size: var(--text-xs);
+    color: var(--color-ink-faint);
+  }
+
+  .experience-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+  }
+
+  .experience-bullets li {
+    font-size: var(--text-base);
+    color: var(--color-ink-muted);
+    padding-left: var(--space-3);
+    position: relative;
+  }
+
+  .experience-bullets li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--color-ink-faint);
+  }
+
+  @media (max-width: 600px) {
+    .experience-meta,
+    .experience-role-dates {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+  }
+</style>

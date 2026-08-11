@@ -116,3 +116,39 @@ code, .mono {
     transition: none;
   }
 }
+
+/* ─── Page structure ──────────────────────────────────────────── */
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+section {
+  padding-block: var(--space-16);
+}
+
+.section-heading {
+  font-size: var(--text-xl);
+  font-weight: 300;
+  margin-bottom: var(--space-8);
+  color: var(--color-ink);
+}
+
+/* ─── Shared components ───────────────────────────────────────── */
+
+/* Tag list — used in Experience and Projects */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tag {
+  font-size: var(--text-xs);
+  color: var(--color-ink-faint);
+  border: 1px solid currentColor;
+  padding: 0.15em 0.5em;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+}

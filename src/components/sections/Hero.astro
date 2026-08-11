@@ -1,0 +1,82 @@
+---
+import { name, tagline } from '../../data/site';
+---
+
+<section id="hero" aria-label="Introduction">
+  <div class="container hero-inner">
+    <div class="hero-text">
+      <h1 class="hero-name">{name}</h1>
+      <p class="hero-tagline" set:html={tagline.replace('. ', '.<br />')} />
+    </div>
+    <nav class="hero-nav" aria-label="Page sections">
+      <ol>
+        <li><a href="#experience"><span class="mono">01</span> Experience</a></li>
+        <li><a href="#projects"><span class="mono">02</span> Projects</a></li>
+        <li><a href="#about"><span class="mono">03</span> About</a></li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<style>
+  #hero {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    padding-block: var(--space-16);
+  }
+
+  .hero-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .hero-name {
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: clamp(var(--text-3xl), 9vw, var(--text-4xl));
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .hero-tagline {
+    font-family: var(--font-body);
+    font-size: clamp(var(--text-base), 2.5vw, var(--text-lg));
+    color: var(--color-ink-muted);
+    line-height: var(--leading-loose);
+    margin-top: var(--space-2);
+  }
+
+  .hero-nav ol {
+    list-style: none;
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .hero-nav a {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-ink-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  .hero-nav a:hover {
+    color: var(--color-ink);
+  }
+
+  .hero-nav .mono {
+    color: var(--color-ink-faint);
+  }
+
+  @media (max-width: 600px) {
+    .hero-nav ol {
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+  }
+</style>

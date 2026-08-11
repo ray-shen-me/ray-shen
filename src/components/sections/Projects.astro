@@ -1,0 +1,118 @@
+---
+import { projects } from '../../data/projects';
+---
+
+<section id="projects" aria-labelledby="projects-heading">
+  <div class="container">
+    <span class="section-index" aria-hidden="true">02</span>
+    <h2 id="projects-heading" class="section-heading">Projects</h2>
+    <ol class="project-list" role="list">
+      {projects.map((p) => (
+        <li class="project-item reveal">
+          <div class="project-header">
+            <h3 class="project-name">{p.name}</h3>
+            {p.award && (
+              <span class="project-award mono">{p.award}</span>
+            )}
+          </div>
+          <p class="project-description">{p.description}</p>
+          <div class="project-footer">
+            <div class="tag-list" role="list" aria-label="Technologies">
+              {p.tags.map((t) => (
+                <span class="tag mono" role="listitem">{t}</span>
+              ))}
+            </div>
+            <div class="project-links">
+              {p.github && (
+                <a
+                  href={p.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${p.name} GitHub repository`}
+                >
+                  GitHub ↗
+                </a>
+              )}
+              {p.live && (
+                <a
+                  href={p.live}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${p.name} live site`}
+                >
+                  Live ↗
+                </a>
+              )}
+            </div>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .project-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .project-item {
+    border-top: 1px solid var(--color-ink-faint);
+    padding-top: var(--space-4);
+  }
+
+  .project-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+  }
+
+  .project-name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .project-award {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    letter-spacing: 0.04em;
+  }
+
+  .project-description {
+    color: var(--color-ink-muted);
+    font-size: var(--text-base);
+    margin-bottom: var(--space-3);
+    line-height: var(--leading-body);
+  }
+
+  .project-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .project-links {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .project-links a {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  @media (max-width: 600px) {
+    .project-footer {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
