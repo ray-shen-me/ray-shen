@@ -28,9 +28,10 @@
 
   const FLAP_BASE_FREQ  = 1.1;   // Hz — base for per-boid constant freq
   const FLAP_FREQ_VAR   = 0.3;   // ± variation so the flock isn't perfectly in sync
-  const FLAP_AMP        = 0.22;  // radians half-amplitude (smaller = less aggressive)
-  const BANK_SMOOTH     = 0.06;  // lerp factor toward target bank (lower = smoother)
-  const BANK_MAX        = 0.28;  // maximum roll in radians (~16°)
+  const FLAP_AMP        = 0.22;  // radians half-amplitude
+  const BANK_SMOOTH     = 0.05;  // lerp factor toward target bank
+  const BANK_MAX        = 0.25;  // maximum roll in radians (~14°)
+  const MAX_TURN_RATE   = 3.2;   // radians/second — hard cap on heading change per frame
   const ROOST_Y_FRAC    = 0.92;
   const ROOST_COUNT     = 22;
   const DPR_CAP         = Math.min(window.devicePixelRatio, 2);
@@ -185,8 +186,8 @@
         cy = ny * speed - b.vy;
       }
 
-      // ── Wander
-      const wAngle  = (Math.random() - 0.5) * 0.4;
+      // ── Wander (much smaller angle — just enough organic variation)
+      const wAngle  = (Math.random() - 0.5) * 0.12;
       const heading = Math.atan2(b.vy, b.vx) + wAngle;
       const wx = Math.cos(heading) * speed - b.vx;
       const wy = Math.sin(heading) * speed - b.vy;
@@ -195,6 +196,9 @@
       const rawAx = cfg.wSep * sx + cfg.wAli * ax + cfg.wCoh * cx + cfg.wWan * wx;
       const rawAy = cfg.wSep * sy + cfg.wAli * ay + cfg.wCoh * cy + cfg.wWan * wy;
       const [fax, fay] = clampMag(rawAx, rawAy, force);
+
+      // Snapshot heading BEFORE any velocity change — needed for turn-rate clamp below
+      const prevHeading = Math.atan2(b.vy, b.vx);
 
       b.vx += fax;
       b.vy += fay;
@@ -206,7 +210,6 @@
         const dy = b.y - py;
         const d  = len(dx, dy);
         if (d > 0 && d < cfg.predRadius) {
-          // Stronger when closer; falls off linearly to zero at predRadius
           const strength = cfg.predImpulse * (1 - d / cfg.predRadius);
           b.vx += (dx / d) * strength;
           b.vy += (dy / d) * strength;
@@ -215,6 +218,24 @@
 
       // Store acceleration direction for banking
       b.ax = fax; b.ay = fay;
+
+      // ── Turn-rate cap — birds have rotational inertia; clamp how much the
+      //    heading can change this frame. Without this, noisy forces from wander
+      //    + separation cause boids to snap direction every frame.
+      const curSpd = len(b.vx, b.vy);
+      if (curSpd > 0.01) {
+        const curHeading = Math.atan2(b.vy, b.vx);
+        let dH = curHeading - prevHeading;
+        // Normalise to (-π, π)
+        while (dH >  Math.PI) dH -= 2 * Math.PI;
+        while (dH < -Math.PI) dH += 2 * Math.PI;
+        const maxTurn = MAX_TURN_RATE * dt;
+        if (Math.abs(dH) > maxTurn) {
+          const clampedH = prevHeading + Math.sign(dH) * maxTurn;
+          b.vx = Math.cos(clampedH) * curSpd;
+          b.vy = Math.sin(clampedH) * curSpd;
+        }
+      }
 
       // ── Smooth bank — lerp toward target turn rate rather than snapping
       const velDir     = Math.atan2(b.vy, b.vx);
