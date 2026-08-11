@@ -80,6 +80,9 @@ const projects = [
     live: null,
   },
 ];
+
+// Drop your headshot at public/images/headshot.jpg (or .png / .webp)
+const headshot: string | null = '/images/headshot.jpg';
 ---
 
 <Base>
@@ -195,13 +198,26 @@ const projects = [
       <div class="container">
         <span class="section-index" aria-hidden="true">03</span>
         <h2 id="about-heading" class="section-heading">About</h2>
-        <p class="about-bio reveal">
-          I'm a full-stack engineer studying CS and math at Northeastern,
-          currently interning at Hudl. I build products end to end — the work I
-          care most about has been civic, education, and nonprofit tools that
-          people actually use. Off the clock, I'm usually backpacking, running,
-          or snowboarding.
-        </p>
+        <div class="about-inner reveal">
+          <p class="about-bio">
+            I'm a full-stack engineer studying CS and math at Northeastern,
+            currently interning at Hudl. I build products end to end — the work I
+            care most about has been civic, education, and nonprofit tools that
+            people actually use. Off the clock, I'm usually backpacking, running,
+            or snowboarding.
+          </p>
+          {headshot && (
+            <div class="headshot-wrap">
+              <img
+                src={headshot}
+                alt="Ray Shen"
+                class="headshot"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          )}
+        </div>
       </div>
     </section>
   </main>
@@ -479,11 +495,56 @@ const projects = [
 
   /* ── About ───────────────────────────────────────────────────── */
 
+  .about-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-8);
+  }
+
   .about-bio {
     font-size: clamp(var(--text-base), 2vw, var(--text-lg));
     line-height: var(--leading-loose);
     color: var(--color-ink-muted);
     max-width: 38rem;
+    flex: 1;
+  }
+
+  /* ── Headshot ─────────────────────────────────────────────────── */
+
+  .headshot-wrap {
+    flex-shrink: 0;
+    width: clamp(120px, 16vw, 180px);
+    isolation: isolate;
+  }
+
+  .headshot {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    object-position: top center;
+    filter: grayscale(1) contrast(1.05);
+    mix-blend-mode: multiply;
+    opacity: 0.88;
+    transition:
+      filter 500ms var(--ease-out),
+      opacity 500ms var(--ease-out);
+  }
+
+  .headshot:hover {
+    filter: grayscale(0) contrast(1);
+    opacity: 1;
+  }
+
+  @media (max-width: 600px) {
+    .about-inner {
+      flex-direction: column-reverse;
+      gap: var(--space-4);
+    }
+
+    .headshot-wrap {
+      width: clamp(100px, 40vw, 140px);
+    }
   }
 
   /* ── Contact / Roost ─────────────────────────────────────────── */
