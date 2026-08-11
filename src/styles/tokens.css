@@ -17,7 +17,7 @@
   --color-paper:       #F4F0E6;
   --color-ink:         #1B1A17;
   --color-ink-muted:   #5A5850;
-  --color-ink-faint:   #9A978E;
+  --color-ink-faint:   #636058; /* darkened from #9A978E: ~4.8:1 on paper, passes WCAG AA */
   --color-accent:      #2F4A63;
   --color-accent-hover:#3E617F;
 

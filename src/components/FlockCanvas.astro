@@ -197,14 +197,34 @@
       const rawAy = cfg.wSep * sy + cfg.wAli * ay + cfg.wCoh * cy + cfg.wWan * wy;
       const [fax, fay] = clampMag(rawAx, rawAy, force);
 
-      // Snapshot heading BEFORE any velocity change — needed for turn-rate clamp below
+      // Snapshot heading BEFORE flocking force is applied
       const prevHeading = Math.atan2(b.vy, b.vx);
 
       b.vx += fax;
       b.vy += fay;
 
-      // ── Predator — applied as a direct velocity impulse AFTER the force
-      //    clamp so it's never neutralised by flocking forces.
+      // Store acceleration direction for banking
+      b.ax = fax; b.ay = fay;
+
+      // ── Turn-rate cap — applies only to flocking forces; clamped BEFORE
+      //    the predator impulse so evasion is never limited by this cap.
+      const curSpd = len(b.vx, b.vy);
+      if (curSpd > 0.01) {
+        const curHeading = Math.atan2(b.vy, b.vx);
+        let dH = curHeading - prevHeading;
+        if (dH >  Math.PI) dH -= 2 * Math.PI;
+        if (dH < -Math.PI) dH += 2 * Math.PI;
+        const maxTurn = MAX_TURN_RATE * dt;
+        if (Math.abs(dH) > maxTurn) {
+          const clampedH = prevHeading + Math.sign(dH) * maxTurn;
+          b.vx = Math.cos(clampedH) * curSpd;
+          b.vy = Math.sin(clampedH) * curSpd;
+        }
+      }
+
+      // ── Predator — applied AFTER the turn-rate cap so evasion is never
+      //    clipped. Comment at original line 206 ('never neutralised') is
+      //    now structurally true, not just by intent.
       if (px >= 0) {
         const dx = b.x - px;
         const dy = b.y - py;
@@ -213,27 +233,6 @@
           const strength = cfg.predImpulse * (1 - d / cfg.predRadius);
           b.vx += (dx / d) * strength;
           b.vy += (dy / d) * strength;
-        }
-      }
-
-      // Store acceleration direction for banking
-      b.ax = fax; b.ay = fay;
-
-      // ── Turn-rate cap — birds have rotational inertia; clamp how much the
-      //    heading can change this frame. Without this, noisy forces from wander
-      //    + separation cause boids to snap direction every frame.
-      const curSpd = len(b.vx, b.vy);
-      if (curSpd > 0.01) {
-        const curHeading = Math.atan2(b.vy, b.vx);
-        let dH = curHeading - prevHeading;
-        // Normalise to (-π, π)
-        while (dH >  Math.PI) dH -= 2 * Math.PI;
-        while (dH < -Math.PI) dH += 2 * Math.PI;
-        const maxTurn = MAX_TURN_RATE * dt;
-        if (Math.abs(dH) > maxTurn) {
-          const clampedH = prevHeading + Math.sign(dH) * maxTurn;
-          b.vx = Math.cos(clampedH) * curSpd;
-          b.vy = Math.sin(clampedH) * curSpd;
         }
       }
 
@@ -356,7 +355,15 @@
     const testGL = document.createElement('canvas').getContext('webgl');
     if (!testGL) { canvas.style.display = 'none'; return; }
 
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Reactive reduced-motion — listen for mid-session changes rather than
+    // snapshotting once. When enabled: draw one static frame and stop the
+    // RAF loop. When disabled: restart the loop.
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let prefersReduced = motionQuery.matches;
+    motionQuery.addEventListener('change', (e) => {
+      prefersReduced = e.matches;
+      if (!prefersReduced && !paused) requestAnimationFrame(loop);
+    });
 
     let W = 0, H = 0;
     let boids: Boid[] = [];
@@ -472,10 +479,15 @@
         }
       }
 
-      if (!prefersReduced) {
-        step(boids, dt, W, H, predX, predY, temperature);
+      if (prefersReduced) {
+        // Draw one static frame and stop — don't re-queue RAF.
+        // The motionQuery change listener will restart if the user disables it.
+        ctx!.clearRect(0, 0, W, H);
+        drawFlock(ctx!, boids, canvasOpacity);
+        return;
       }
 
+      step(boids, dt, W, H, predX, predY, temperature);
       ctx!.clearRect(0, 0, W, H);
       drawFlock(ctx!, boids, canvasOpacity);
 

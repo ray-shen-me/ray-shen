@@ -1,12 +1,14 @@
 ---
 // Scroll reveal — wires up IntersectionObserver for .reveal elements.
-// Respects prefers-reduced-motion (global.css makes .reveal instant when motion is reduced).
+// Adds html.js-animations so .reveal opacity:0 only applies when JS is
+// running and reduced-motion is not set (content never invisible on JS failure).
+// Listens for mid-session prefers-reduced-motion changes.
 ---
 
 <script>
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  if (!prefersReduced) {
+  function setupObserver() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -18,7 +20,32 @@
       },
       { threshold: 0.12 }
     );
-
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    return observer;
   }
+
+  let observer: IntersectionObserver | null = null;
+
+  function enable() {
+    document.documentElement.classList.add('js-animations');
+    observer = setupObserver();
+  }
+
+  function disable() {
+    document.documentElement.classList.remove('js-animations');
+    observer?.disconnect();
+    observer = null;
+  }
+
+  if (!motionQuery.matches) {
+    enable();
+  }
+
+  motionQuery.addEventListener('change', (e) => {
+    if (e.matches) {
+      disable();
+    } else {
+      enable();
+    }
+  });
 </script>

@@ -8,8 +8,10 @@
   padding: 0;
 }
 
-html {
-  scroll-behavior: smooth;
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -95,8 +97,11 @@ code, .mono {
 }
 
 /* ─── Scroll reveal ───────────────────────────────────────────── */
+/* .reveal is visible by default — ScrollReveal.astro adds .js-animations
+   to <html> only when JS is running AND reduced-motion is not set.
+   This ensures content is never invisible if scripts fail to load. */
 
-.reveal {
+html.js-animations .reveal {
   opacity: 0;
   transform: translateY(12px);
   transition:
@@ -104,17 +109,36 @@ code, .mono {
     transform var(--duration-normal) var(--ease-out);
 }
 
-.reveal.is-visible {
+html.js-animations .reveal.is-visible {
   opacity: 1;
   transform: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
+/* ─── Skip link (WCAG 2.4.1) ─────────────────────────────────── */
+
+.skip-link {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 99999;
+  padding: 0.5em 1em;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  border-radius: 2px;
+  /* Visually hidden until focused */
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.skip-link:focus {
+  clip: auto;
+  clip-path: none;
+  overflow: visible;
 }
 
 /* ─── Page structure ──────────────────────────────────────────── */

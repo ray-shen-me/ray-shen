@@ -63,6 +63,12 @@ import { bio, headshot, name } from '../../data/site';
     opacity: 1;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .headshot {
+      transition: none;
+    }
+  }
+
   @media (max-width: 600px) {
     .about-inner {
       flex-direction: column-reverse;
