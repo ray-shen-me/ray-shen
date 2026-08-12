@@ -28,7 +28,8 @@
 
   const FLAP_BASE_FREQ  = 1.1;   // Hz — base for per-boid constant freq
   const FLAP_FREQ_VAR   = 0.3;   // ± variation so the flock isn't perfectly in sync
-  const FLAP_AMP        = 0.22;  // radians half-amplitude
+  const FLAP_SPREAD_MIN = 0.10;  // wing half-spread at upstroke (nearly closed)
+  const FLAP_SPREAD_MAX = 0.62;  // wing half-spread at downstroke (fully open)
   const BANK_SMOOTH     = 0.05;  // lerp factor toward target bank
   const BANK_MAX        = 0.25;  // maximum roll in radians (~14°)
   const MAX_TURN_RATE   = 3.2;   // radians/second — hard cap on heading change per frame
@@ -303,10 +304,8 @@
     for (const b of boids) {
       const heading = Math.atan2(b.vy, b.vx);
 
-      // flapPhase is accumulated in step() — always smooth, never jumps
-      const flapAngle = b.roosted ? 0 : FLAP_AMP * Math.sin(b.flapPhase);
-      // bank is smoothed in step() — lerped toward turn rate, never snaps
-      const bank      = b.roosted ? 0 : b.bank;
+      // flapPhase accumulated in step(); bank smoothed toward turn rate
+      const bank = b.roosted ? 0 : b.bank;
 
       const size  = 5 + b.depth * 6;
       const alpha = opacity * (0.35 + b.depth * 0.65);
@@ -315,11 +314,16 @@
       const cosA = Math.cos(angle);
       const sinA = Math.sin(angle);
 
-      // Wing endpoints in local space, then transform inline
+      // Normalized 0→1 flap value: 0 = upstroke (wings tucked), 1 = downstroke (fully open).
+      // Using (1 + sin) / 2 so wings spend equal time up and down.
+      // Roosted birds freeze at the resting mid-spread (0.5).
+      const flapT = b.roosted ? 0.5 : (1 + Math.sin(b.flapPhase)) / 2;
+      const wingSpread = size * (FLAP_SPREAD_MIN + flapT * (FLAP_SPREAD_MAX - FLAP_SPREAD_MIN));
+
       const lwx = -size;
-      const lwy =  size * 0.4 + flapAngle * size * 0.8;
+      const lwy =  wingSpread;
       const rwx = -size;
-      const rwy = -(size * 0.4 + flapAngle * size * 0.8);
+      const rwy = -wingSpread;
 
       ctx.globalAlpha = alpha;
       ctx.lineWidth   = 1.2 + b.depth * 0.6;
