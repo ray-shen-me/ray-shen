@@ -1,4 +1,13 @@
 ---
+// Font CSS imported here so Vite treats them as module imports,
+// rewrites the ./files/*.woff2 paths, and copies font files into dist/.
+// Importing via CSS @import inside a <style> block bypasses this and
+// causes 404s in production (node_modules isn't deployed).
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '@fontsource-variable/source-serif-4/opsz.css';
+
 interface Props {
   title?: string;
   description?: string;
