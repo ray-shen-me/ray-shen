@@ -15,7 +15,9 @@ import { projects } from '../../data/projects';
               <span class="project-award mono">{p.award}</span>
             )}
           </div>
-          <p class="project-description">{p.description}</p>
+          {p.description && (
+            <p class="project-description">{p.description}</p>
+          )}
           <div class="project-footer">
             <div class="tag-list" role="list" aria-label="Technologies">
               {p.tags.map((t) => (

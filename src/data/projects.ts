@@ -1,7 +1,7 @@
 export interface Project {
   name: string;
   award: string | null;
-  description: string;
+  description: string | null;
   tags: string[];
   github: string | null;
   live: string | null;
@@ -32,7 +32,7 @@ export const projects: Project[] = [
     description:
       "Full migration of Northeastern SGA's website from Squarespace to a custom React application. Serves 38,000+ students and faculty with a configurable drag-and-drop CMS backed by PostgreSQL.",
     tags: ['React', 'PostgreSQL', 'Node.js'],
-    github: 'https://github.com/rayyshen',
+    github: null,
     live: null,
   },
   {
@@ -41,7 +41,15 @@ export const projects: Project[] = [
     description:
       'Pro bono web tool for a nonprofit supporting survivors of domestic violence. Built a service-matching questionnaire deployed to 250+ survivors, with accessibility and survivor-conscious design at the forefront.',
     tags: ['React', 'TypeScript', 'Vercel'],
-    github: 'https://github.com/rayyshen',
+    github: null,
+    live: null,
+  },
+  {
+    name: 'Cider',
+    award: null,
+    description: null,
+    tags: [],
+    github: 'https://github.com/ray-shen-me/cider',
     live: null,
   },
 ];
