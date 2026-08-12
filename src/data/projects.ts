@@ -46,10 +46,11 @@ export const projects: Project[] = [
   },
   {
     name: 'Cider',
-    award: null,
-    description: null,
-    tags: [],
+    award: 'HackTJ 11.0 — Best Lifestyle Hack',
+    description:
+      'AI-powered document analyzer that extracts calendar event details from any text or PDF and exports them as .ICS files. Streams GPT responses as they arrive and enriches locations via Google Maps Places API for precise address data.',
+    tags: ['Next.js', 'TypeScript', 'OpenAI', 'Google Maps API'],
     github: 'https://github.com/ray-shen-me/cider',
-    live: null,
+    live: 'https://ciderai.tech',
   },
 ];
