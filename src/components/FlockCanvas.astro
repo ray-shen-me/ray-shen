@@ -8,10 +8,10 @@
   // ─── Mutable config (updated by DevPanel via 'boids-param' events) ───────
 
   const cfg = {
-    count:       180,
+    count:       75,
     maxSpeed:    1.8,
     sepRadius:   28,
-    nbrRadius:   80,
+    nbrRadius:   100,
     predRadius:  120,
     // weights
     wSep:  1.6,
@@ -30,9 +30,11 @@
   const FLAP_FREQ_VAR   = 0.3;   // ± variation so the flock isn't perfectly in sync
   const FLAP_SPREAD_MIN = 0.10;  // wing half-spread at upstroke (nearly closed)
   const FLAP_SPREAD_MAX = 0.62;  // wing half-spread at downstroke (fully open)
-  const BANK_SMOOTH     = 0.05;  // lerp factor toward target bank
-  const BANK_MAX        = 0.25;  // maximum roll in radians (~14°)
-  const MAX_TURN_RATE   = 3.2;   // radians/second — hard cap on heading change per frame
+  const BANK_SMOOTH     = 0.04;  // lerp factor toward target bank
+  const BANK_MAX        = 0.22;  // maximum roll in radians (~13°)
+  const MAX_TURN_RATE   = 1.8;   // radians/second — hard cap on heading change per frame
+  const WANDER_DRIFT    = 0.022; // max random drift to wanderAngle per frame (Brownian motion)
+  const WANDER_MAX      = 0.45;  // max wanderAngle deviation before it's clamped back
   const ROOST_Y_FRAC    = 0.92;
   const ROOST_COUNT     = 22;
   const DPR_CAP         = Math.min(window.devicePixelRatio, 2);
@@ -57,10 +59,11 @@
     x: number; y: number;
     vx: number; vy: number;
     ax: number; ay: number;
-    flapPhase: number; // accumulated phase (radians)
-    flapFreq: number;  // per-boid constant — set at spawn, never changes
+    flapPhase: number;   // accumulated phase (radians)
+    flapFreq: number;    // per-boid constant — set at spawn, never changes
+    wanderAngle: number; // slowly-drifting wander bias — smooth Brownian motion
     depth: number;
-    bank: number;      // smoothed roll angle for banking
+    bank: number;        // smoothed roll angle for banking
     roostTarget: number | null;
     roosted: boolean;
   }
@@ -73,8 +76,8 @@
       vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
       ax: 0, ay: 0,
       flapPhase: Math.random() * Math.PI * 2,
-      // Each bird has its own natural wingbeat rhythm — doesn't change with speed
       flapFreq: FLAP_BASE_FREQ * (1 + (Math.random() - 0.5) * FLAP_FREQ_VAR),
+      wanderAngle: (Math.random() - 0.5) * WANDER_MAX,
       depth: Math.random(),
       bank: 0,
       roostTarget: null, roosted: false,
@@ -187,11 +190,15 @@
         cy = ny * speed - b.vy;
       }
 
-      // ── Wander (much smaller angle — just enough organic variation)
-      const wAngle  = (Math.random() - 0.5) * 0.12;
-      const heading = Math.atan2(b.vy, b.vx) + wAngle;
-      const wx = Math.cos(heading) * speed - b.vx;
-      const wy = Math.sin(heading) * speed - b.vy;
+      // ── Wander — Brownian drift: wanderAngle changes slowly each frame
+      //    instead of sampling fresh noise. Force direction changes
+      //    continuously rather than jumping, eliminating micro-jitter.
+      b.wanderAngle += (Math.random() - 0.5) * WANDER_DRIFT * 2;
+      if (b.wanderAngle >  WANDER_MAX) b.wanderAngle =  WANDER_MAX;
+      if (b.wanderAngle < -WANDER_MAX) b.wanderAngle = -WANDER_MAX;
+      const wanderH = Math.atan2(b.vy, b.vx) + b.wanderAngle;
+      const wx = Math.cos(wanderH) * speed - b.vx;
+      const wy = Math.sin(wanderH) * speed - b.vy;
 
       // ── Combined flocking force (clamped) ─────────────────────────────────
       const rawAx = cfg.wSep * sx + cfg.wAli * ax + cfg.wCoh * cx + cfg.wWan * wx;
