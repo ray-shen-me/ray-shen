@@ -51,6 +51,6 @@ export const projects: Project[] = [
       'AI-powered document analyzer that extracts calendar event details from any text or PDF and exports them as .ICS files. Streams GPT responses as they arrive and enriches locations via Google Maps Places API for precise address data.',
     tags: ['Next.js', 'TypeScript', 'OpenAI', 'Google Maps API'],
     github: 'https://github.com/ray-shen-me/cider',
-    live: 'https://ciderai.tech',
+    live: null,
   },
 ];
