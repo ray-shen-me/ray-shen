@@ -42,8 +42,11 @@ import { bio, headshot, name } from '../../data/site';
     flex-shrink: 0;
     width: clamp(120px, 16vw, 180px);
     isolation: isolate;
-    /* overflow:hidden clips the scale so the expand stays within the box */
-    overflow: hidden;
+    transition: transform 400ms var(--ease-out);
+  }
+
+  .headshot-wrap:hover {
+    transform: scale(1.05);
   }
 
   .headshot {
@@ -52,16 +55,10 @@ import { bio, headshot, name } from '../../data/site';
     aspect-ratio: 3 / 4;
     object-fit: cover;
     object-position: top center;
-    /* Always full colour — no grayscale */
-    transition: transform 400ms var(--ease-out);
-  }
-
-  .headshot-wrap:hover .headshot {
-    transform: scale(1.05);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .headshot {
+    .headshot-wrap {
       transition: none;
     }
   }
