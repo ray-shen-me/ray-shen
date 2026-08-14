@@ -42,6 +42,8 @@ import { bio, headshot, name } from '../../data/site';
     flex-shrink: 0;
     width: clamp(120px, 16vw, 180px);
     isolation: isolate;
+    /* overflow:hidden clips the scale so the expand stays within the box */
+    overflow: hidden;
   }
 
   .headshot {
@@ -50,17 +52,12 @@ import { bio, headshot, name } from '../../data/site';
     aspect-ratio: 3 / 4;
     object-fit: cover;
     object-position: top center;
-    filter: grayscale(1) contrast(1.05);
-    mix-blend-mode: multiply;
-    opacity: 0.88;
-    transition:
-      filter 500ms var(--ease-out),
-      opacity 500ms var(--ease-out);
+    /* Always full colour — no grayscale */
+    transition: transform 400ms var(--ease-out);
   }
 
-  .headshot:hover {
-    filter: grayscale(0) contrast(1);
-    opacity: 1;
+  .headshot-wrap:hover .headshot {
+    transform: scale(1.05);
   }
 
   @media (prefers-reduced-motion: reduce) {
