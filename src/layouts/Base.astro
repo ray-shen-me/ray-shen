@@ -37,12 +37,22 @@ const {
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
     <title>{title}</title>
+
+    <!-- RUM tracker config (task 4.2, 4.7) -->
+    <meta name="rum-site" content="ray-shen-me" />
+    <meta name="rum-ingest" content="https://api.ray-shen.me/track" />
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to content</a>
     <slot />
   </body>
 </html>
+
+<!-- RUM tracker (task 4.7): bundled by Astro/Vite, not a hydrated island.
+     Errors (GPC/DNT set, missing meta) are intentional no-ops — never shown to users. -->
+<script>
+  import('../scripts/tracker.ts').catch(() => {});
+</script>
 
 <style is:global>
   @import '../styles/global.css';
